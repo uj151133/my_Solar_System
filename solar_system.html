@@ -1,0 +1,188 @@
+<!-- サンプルコード -->
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title>Sample</title>
+	<script src="src/three.js"></script>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', exec); // body が読み込み終わるまで待つ
+
+
+		var width = 960; // レンダリング領域の幅
+		var height = 600; // レンダリング領fa域の高さ
+		var border = 100; // 床の幅
+		var scene; // シーン
+		var camera; // カメラ
+		var renderer; // レンダラー
+		var light; // ライト
+		var isMouseclick = false; // マウスクリックのフラグ
+		var theta = 0; // 雪だるまの高さを決めるパラメータ
+		var snowman; // 雪だるまオブジェクト（グループ）
+		var wall; // 壁オブジェクト
+		var speed = 1; // 壁の初期速度
+		var hit = 0; // 壁に当たった回数
+		var hitMax = 3; // ゲームオーバーになるhitの数
+		var isEnd = false; // ゲームオーバーのフラグ
+		var isCheck = true; // 壁が雪だるまより手前かのフラグ
+		var sun;
+		var mercury;
+		var venus;
+		var earth;
+		var moon;
+		var mars;
+		var jupiter;
+		var radius_mercury = 145;
+		var radius_venus = 160;
+		var radius_earth = 170;
+		var radius_moon = 15;
+		var radius_mars = 190;
+		var radius_jupiter = 290;
+		var angle_mercury = 0;
+		var angle_venus = Math.PI;
+		var angle_earth = Math.PI;
+		var angle_moon = Math.PI;
+		var angle_mars = Math.PI;
+		var angle_jupiter = Math.PI;
+		function exec() {
+			var loader = new THREE.TextureLoader();
+			// マウスイベント
+			document.addEventListener("click", function (e) {
+				isMouseclick = true;
+			});
+
+			// シーンを作る
+			scene = new THREE.Scene();
+			// ライトの設定
+			light = new THREE.SpotLight(0xffffff, 2, 100, Math.PI / 4, 1);
+			light.position.set(0, 40, 60);
+			// ライトのシャドウ（影）を有効にする		
+			light.castShadow = true;
+			light.shadow.mapSize.width = 2048; // シャドウ（影）の解像度
+			light.shadow.mapSize.height = 2048; // シャドウ（影）の解像度
+
+			scene.add(light);
+
+			var amb_light = new THREE.AmbientLight(0xFFFFFF, 1); // 環境光
+			scene.add(amb_light);
+
+			//太陽
+			var sun_map = loader.load('img/sun.jpg');
+			sun = createPlanet(140, sun_map);
+			scene.add(sun);
+
+			//水星
+			var mercury_map = loader.load('img/mercury.jpg');
+			mercury = createPlanet(3, mercury_map);
+			mercury.position.x = sun.position.x - radius_mercury;
+			scene.add(mercury);
+
+			//金星
+			var venus_map = loader.load('img/venus.jpg');
+			venus = createPlanet(4.5, venus_map);
+			venus.position.x = sun.position.x - radius_venus;
+			scene.add(venus);
+
+			//地球
+			var earth_map = loader.load('img/earth.jpg');
+			earth = createPlanet(10, earth_map);
+			earth.position.x = sun.position.x - radius_earth;
+			scene.add(earth);
+			
+			//月
+			var moon_map = loader.load('img/moon.jpg');
+			moon = createPlanet(2, moon_map);
+			moon.position.x = earth.position.x - radius_moon;
+			scene.add(moon);
+
+			//火星
+			var mars_map = loader.load('img/mars.jpg');
+			mars = createPlanet(4, mars_map);
+			mars.position.x = sun.position.x - radius_mars;
+
+			scene.add(mars);
+
+			//木星
+			var jupiter_map = loader.load('img/jupiter.jpg');
+			jupiter = createPlanet(64, jupiter_map);
+			jupiter.position.x = sun.position.x - radius_jupiter;
+			scene.add(jupiter);
+
+			// カメラを設定
+			camera = new THREE.PerspectiveCamera(45, width / height, 1, 1000);
+			camera.position.set(0, 200, 700);
+			camera.lookAt(scene.position);
+			// camera.lookAt(sun);
+
+			//レンダラを作成
+			renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas1') });
+			renderer.setSize(width, height);
+
+			// レンダラで影を有効にする
+			renderer.shadowMap.enabled = true;
+
+			update();
+		}
+		function createPlanet(radius, texture){
+			var geom = new THREE.SphereGeometry(radius, 50, 50);
+			var material = new THREE.MeshPhongMaterial({
+				specular:0xFFFFFF, shininess:90, 
+				map: texture
+			});
+			mesh = new THREE.Mesh(geom, material);
+			
+			return mesh
+		}
+		// 1フレームの処理
+		function update() {
+			if(isMouseclick == true ) { // マウスのクリックによって物体が回転
+				sun.rotation.y += Math.PI * 2 / 25.379995 / 24;
+				mercury.rotation.y += Math.PI * 2 / 58.6462 / 24;
+				venus.rotation.y += Math.PI * 2 / -243.0187 / 24;
+				earth.rotation.y += Math.PI * 2 / 0.99726968 / 24;
+				moon.rotation.y += Math.PI * 2 / 27.321661 /24;
+				mars.rotation.y += Math.PI * 2 / 1.02595675 / 24;
+				jupiter.rotation.y += Math.PI * 2 / 0.41007 / 24;
+
+				
+				angle_mercury -= Math.PI * 2 / 365.24219 / 0.241 / 24;
+				angle_venus -= Math.PI * 2 / 365.24219 / 0.615 / 24;
+				angle_earth -= Math.PI * 2 / 365.24219 / 24;
+				angle_moon -= Math.PI * 2 / 365.24219 / 0.0748 / 24;
+				angle_mars -= Math.PI * 2 / 365.24219 / 1.881 / 24;
+				angle_jupiter -= Math.PI * 2 / 365.24219 / 11.87 /24;
+
+
+				mercury.position.x = radius_mercury * Math.cos(angle_mercury);
+				mercury.position.z = radius_mercury * Math.sin(angle_mercury);
+				venus.position.x = radius_venus * Math.cos(angle_venus);
+				venus.position.z = radius_venus * Math.sin(angle_venus);
+				earth.position.x = radius_earth * Math.cos(angle_earth);
+				earth.position.z = radius_earth * Math.sin(angle_earth);
+				moon.position.x = earth.position.x + radius_moon * Math.cos(angle_moon);
+				moon.position.z = earth.position.z + radius_moon * Math.sin(angle_moon);
+				mars.position.x = radius_mars * Math.cos(angle_mars);
+				mars.position.z = radius_mars * Math.sin(angle_mars);
+				jupiter.position.x = radius_jupiter * Math.cos(angle_jupiter);
+				jupiter.position.z = radius_jupiter * Math.sin(angle_jupiter);
+
+			}
+
+    renderer.render(scene, camera); // レンダラーに描画することを命令する
+    requestAnimationFrame(update);
+		
+		}
+	</script>
+</head>
+
+<body>
+	<h1>太陽系（〜木星まで） </h1>
+
+	<canvas id="canvas1" style="width: 960; height: 600;"></canvas>
+	<p>オブジェクトにテクスチャを反映させるのに多少手間がかかりました。また、それぞれの惑星・恒星の自転周期と公転周期はの比は正確なものになるように調整しました。</p>
+	<p>python -m http.server とターミナルで命令してサーバー上で実行しました。</p>
+</body>
+
+</html>
